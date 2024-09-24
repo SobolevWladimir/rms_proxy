@@ -1,6 +1,9 @@
 package parameters
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 type ProxyEngine struct {
 	replaced []ReplacedItem      // список элементов на замену
@@ -20,6 +23,12 @@ func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, error) {
 // Находим нужный элемент для замены
 func (e *ProxyEngine) getReplaceItem(r *http.Request) *ReplacedItem {
 	// обходим каждый элемн на соответсвие  ..и если что проверякм
+	for _, val := range e.replaced {
+		if(val.IsSuitable(r)){
+			fmt.Println(" this is suttable")
+			return &val;
+		}
+	}
 
 	return nil
 }

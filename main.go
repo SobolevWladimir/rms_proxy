@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"rms_proxy/v2/src/parameters"
+	"time"
 )
 
 type CounterHandler struct {
@@ -11,15 +13,25 @@ type CounterHandler struct {
 }
 
 func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(ct.counter)
-	ct.counter++
-	fmt.Fprintln(w, "Counter:", ct.counter)
+	repository := parameters.SettingsRepositoryMemory{}
+	engine := repository.GetActiveProxySettings()
+	result, err := engine.Handle(r)
+	if err != nil {
+		fmt.Println("error")
+
+	}
+	fmt.Fprintln(w, result)
 }
 
 func main() {
 	th := &CounterHandler{counter: 0}
-	http.Handle("/resto", th)
-	log.Fatal(http.ListenAndServe(":8084", nil))
+	s := &http.Server{
+		Addr:           ":8084",
+		Handler:        th,
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   30 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	log.Fatal(s.ListenAndServe())
 	fmt.Println("server start")
 }
-

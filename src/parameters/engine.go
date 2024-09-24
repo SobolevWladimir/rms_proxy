@@ -8,7 +8,7 @@ type ProxyEngine struct {
 	logs     []LogItem
 }
 
-func (e *ProxyEngine) Handle(w http.ResponseWriter, r *http.Request) (string, error) {
+func (e *ProxyEngine) Handle(r *http.Request) (string, error) {
 	// проверяем, если тут наш api.
 	rep := e.getReplaceItem(r)
 	var result string

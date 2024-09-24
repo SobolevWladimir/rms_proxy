@@ -17,21 +17,26 @@ type RMSConnectParameter struct {
 	password string
 }
 
-func (rm *RMSConnectParameter) Handle(r *http.Request) (string, error) {
-	token, err := rm.GetToken()
+func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
+	respToken, err := rm.GetToken()
 	if r.URL.Path == "/resto/api/auth" {
-		return token, err
+		return respToken, err
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
+	b, err := io.ReadAll(respToken.Body)
+
+	token:=string(b)
+
 	return rm.Proxy(r, token)
 }
 
-func (rm *RMSConnectParameter) GetToken() (string, error) {
+func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	uri, err := url.Parse(rm.url)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	uri.Path = "/resto/api/auth"
 	hasher := sha1.New()
@@ -42,18 +47,13 @@ func (rm *RMSConnectParameter) GetToken() (string, error) {
 	query.Set("pass", pass)
 	uri.RawQuery = query.Encode()
 	resp, err := http.Get(uri.String())
-	if err != nil {
-		return "", err
-	}
-	b, err := io.ReadAll(resp.Body)
-
-	return string(b), err
+	return resp, err;
 }
 
-func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (string, error) {
+func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Response, error) {
 	uri, err := url.Parse(rm.url)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	uri.Path = r.URL.Path
 	query := r.URL.Query()
@@ -67,27 +67,14 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (string, err
 	fmt.Println("URL:", uri.String())
 	fmt.Println("METHOD:", r.Method)
 	fmt.Println("BODY:", string(requestBody))
-	req, err := http.NewRequest(r.Method, uri.String(),bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest(r.Method, uri.String(), bytes.NewBuffer(requestBody))
 	req.Header = rm.getHeaders(r)
 	fmt.Println("Headers:", req.Header)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	resp, err := client.Do(req)
-	b, err := io.ReadAll(resp.Body)
-
-
-	if err != nil {
-		fmt.Println("server response error:")
-		fmt.Println(err.Error())
-
-	} else {
-		fmt.Println("server response:")
-		fmt.Println(string(b))
-
-	}
-
-	return string(b), err
+	return resp, err
 
 }
 

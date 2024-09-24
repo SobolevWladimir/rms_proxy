@@ -11,7 +11,7 @@ type ReplacedItem struct {
 
 
 
-func(rm *ReplacedItem) Handle( r *http.Request) (string,error) {
+func(rm *ReplacedItem) Handle( r *http.Request) (*http.Response,error) {
 
-	return "", nil;
+	return nil, nil;
 }

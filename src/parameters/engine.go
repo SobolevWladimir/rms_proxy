@@ -8,19 +8,13 @@ type ProxyEngine struct {
 	logs     []LogItem
 }
 
-func (e *ProxyEngine) Handle(r *http.Request) (string, error) {
+func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, error) {
 	// проверяем, если тут наш api.
 	rep := e.getReplaceItem(r)
-	var result string
-	var err error
 	if rep != nil {
-		result, err = rep.Handle(r)
-	} else {
-		result, err = e.mainRms.Handle(r)
+		return rep.Handle(r)
 	}
-	// Создать лог.
-
-	return result, err
+	return e.mainRms.Handle(r)
 }
 
 // Находим нужный элемент для замены

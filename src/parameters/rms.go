@@ -1,12 +1,14 @@
 package parameters
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type RMSConnectParameter struct {
@@ -16,18 +18,6 @@ type RMSConnectParameter struct {
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request) (string, error) {
-	fmt.Println(r.URL.String())
-	fmt.Println(r.Header)
-
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("BODY:")
-	fmt.Printf("%s", b)
-	fmt.Println("--------")
-	fmt.Println(r.URL.Path)
-
 	token, err := rm.GetToken()
 	if r.URL.Path == "/resto/api/auth" {
 		return token, err
@@ -69,14 +59,23 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (string, err
 	query := r.URL.Query()
 	query.Set("key", token)
 	uri.RawQuery = query.Encode()
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
 	client := &http.Client{}
-	req, err := http.NewRequest(r.Method, uri.String(), r.Body)
-	// req.Header = r.Header
+	fmt.Println("URL:", uri.String())
+	fmt.Println("METHOD:", r.Method)
+	fmt.Println("BODY:", string(requestBody))
+	req, err := http.NewRequest(r.Method, uri.String(),bytes.NewBuffer(requestBody))
+	req.Header = rm.getHeaders(r)
+	fmt.Println("Headers:", req.Header)
 	if err != nil {
 		return "", err
 	}
 	resp, err := client.Do(req)
 	b, err := io.ReadAll(resp.Body)
+
 
 	if err != nil {
 		fmt.Println("server response error:")
@@ -90,4 +89,18 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (string, err
 
 	return string(b), err
 
+}
+
+func (rm *RMSConnectParameter) getHeaders(r *http.Request) http.Header {
+	result := http.Header{}
+	for key, value := range r.Header {
+		if strings.Contains(key, "X-Resto") {
+			result.Set(key, value[0])
+		}
+		if strings.Contains(key, "Content-Type") {
+			result.Set(key, value[0])
+		}
+	}
+
+	return result
 }

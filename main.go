@@ -17,8 +17,8 @@ func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	engine := repository.GetActiveProxySettings()
 	result, err := engine.Handle(r)
 	if err != nil {
-		fmt.Println("error")
-
+		fmt.Println("error response", err.Error())
+	fmt.Fprintln(w, err.Error())
 	}
 	fmt.Fprintln(w, result)
 }

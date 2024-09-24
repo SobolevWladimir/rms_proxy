@@ -17,6 +17,7 @@ func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	repository := parameters.SettingsRepositoryMemory{}
 	engine := repository.GetActiveProxySettings()
 	result, err := engine.Handle(r)
+	fmt.Println("\n----------------", r.Method, r.URL.String())
 	if err != nil {
 		fmt.Println("error response", err.Error())
 		fmt.Fprintln(w, err.Error())
@@ -29,6 +30,7 @@ func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 	fmt.Fprintln(w, string(body))
+	fmt.Println("---------------- end ---------------------")
 }
 func (ct *CounterHandler) setHeader(w http.ResponseWriter, resp *http.Response) {
 	for key, value := range resp.Header {

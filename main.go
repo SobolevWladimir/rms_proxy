@@ -12,8 +12,21 @@ import (
 type CounterHandler struct {
 	counter int
 }
+const settinsRmsPage ="/settings/rms.json"
+const settinsRoutePage ="/settings/route.json"
 // test
 func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if(r.URL.Path == settinsRmsPage || r.URL.Path == settinsRoutePage) {
+		ct.ServeHTTPSettings(w, r);
+		return; 
+	}
+
+	ct.ServeHTTPProxy(w, r);
+}
+
+func (ct *CounterHandler) ServeHTTPSettings(w http.ResponseWriter, r *http.Request) {
+}
+func (ct *CounterHandler) ServeHTTPProxy(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n----------------")
 	fmt.Println(r.Method, r.URL.String())
 	repository := parameters.SettingsRepositoryMemory{}
@@ -38,6 +51,7 @@ func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, string(body))
 	fmt.Println("---------------- end ---------------------")
 }
+
 func (ct *CounterHandler) setHeader(w http.ResponseWriter, resp *http.Response) {
 	for key, value := range resp.Header {
 			w.Header().Add(key, value[0])

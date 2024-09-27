@@ -12,9 +12,10 @@ import (
 )
 
 type RMSConnectParameter struct {
-	url      string
-	login    string
-	password string
+	url             string
+	login           string
+	password        string
+	needPassEncrupt bool
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
@@ -28,7 +29,7 @@ func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
 
 	b, err := io.ReadAll(respToken.Body)
 
-	token:=string(b)
+	token := string(b)
 
 	return rm.Proxy(r, token)
 }
@@ -39,15 +40,19 @@ func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 		return nil, err
 	}
 	uri.Path = "/resto/api/auth"
-	hasher := sha1.New()
-	hasher.Write([]byte(rm.password))
 	query := uri.Query()
 	query.Set("login", rm.login)
-	pass := hex.EncodeToString(hasher.Sum(nil))
-	query.Set("pass", pass)
+	if rm.needPassEncrupt {
+		hasher := sha1.New()
+		hasher.Write([]byte(rm.password))
+		pass := hex.EncodeToString(hasher.Sum(nil))
+		query.Set("pass", pass)
+	} else {
+		query.Set("pass", rm.password)
+	}
 	uri.RawQuery = query.Encode()
 	resp, err := http.Get(uri.String())
-	return resp, err;
+	return resp, err
 }
 
 func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Response, error) {

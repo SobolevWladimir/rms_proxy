@@ -12,19 +12,25 @@ import (
 type CounterHandler struct {
 	counter int
 }
-
+// test
 func (ct *CounterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n----------------")
+	fmt.Println(r.Method, r.URL.String())
 	repository := parameters.SettingsRepositoryMemory{}
 	engine := repository.GetActiveProxySettings()
+	fmt.Println("result:")
 	result, err := engine.Handle(r)
-	fmt.Println("\n----------------", r.Method, r.URL.String())
 	if err != nil {
 		fmt.Println("error response", err.Error())
 		fmt.Fprintln(w, err.Error())
 	}
 	ct.setHeader(w, result)
 	w.WriteHeader(result.StatusCode)
+
+	fmt.Println("status code", result.StatusCode)
 	body, err := io.ReadAll(result.Body)
+	fmt.Println("body:")
+	fmt.Println(string(body))
 	if err != nil {
 		fmt.Println("error  read body", err.Error())
 		fmt.Fprintln(w, err.Error())

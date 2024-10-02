@@ -26,13 +26,28 @@ func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	b, err := io.ReadAll(respToken.Body)
-
 	token := string(b)
+	defer rm.Logout(token);
 
 	return rm.Proxy(r, token)
 }
+func (rm *RMSConnectParameter) Logout(token string) error {
+
+	uri, err := url.Parse(rm.url)
+	if err != nil {
+		return nil
+	}
+
+	uri.Path = "/resto/api/logout"
+	query := uri.Query()
+	query.Set("key", rm.login)
+	query.Set("client-type", "iikoweb")
+	uri.RawQuery = query.Encode()
+	_, err = http.Get(uri.String())
+	return err
+}
+
 
 func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	uri, err := url.Parse(rm.url)

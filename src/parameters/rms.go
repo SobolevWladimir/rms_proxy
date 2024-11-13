@@ -28,7 +28,7 @@ func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
 	}
 	b, err := io.ReadAll(respToken.Body)
 	token := string(b)
-	defer rm.Logout(token);
+	defer rm.Logout(token)
 
 	return rm.Proxy(r, token)
 }
@@ -47,7 +47,6 @@ func (rm *RMSConnectParameter) Logout(token string) error {
 	_, err = http.Get(uri.String())
 	return err
 }
-
 
 func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	uri, err := url.Parse(rm.url)
@@ -75,6 +74,7 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Respo
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("\n \n  --------------- \n PROXY TO: \n")
 	uri.Path = r.URL.Path
 	query := r.URL.Query()
 	query.Set("key", token)
@@ -94,6 +94,7 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Respo
 		return nil, err
 	}
 	resp, err := client.Do(req)
+	fmt.Println("  /end  \n")
 	return resp, err
 
 }

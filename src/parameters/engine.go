@@ -8,25 +8,42 @@ import (
 type ProxyEngine struct {
 	replaced []ReplacedItem      // список элементов на замену
 	mainRms  RMSConnectParameter //  Основоной контент от куда берем данные
-	logs     []LogItem
 }
 
-func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, error) {
+func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
+	log := LogItem{
+		ClientRequest: CreateHTTPRequest(r),
+	}
 	// проверяем, если тут наш api.
 	rep := e.getReplaceItem(r)
+	var res *http.Response
+	var err error
+	log.MainRMS = e.mainRms
 	if rep != nil {
-		return rep.Handle(r)
+		res, err = rep.Handle(r)
+		log.IsProxy = true
+		log.ProxyTo = rep
+	} else {
+		res, err = e.mainRms.Handle(r)
+		log.IsProxy = false
+		log.ProxyTo = nil
 	}
-	return e.mainRms.Handle(r)
+	log.IsErrorResponse = err != nil
+	log.ClientResponse = CreateHTTPResponse(res)
+	if err != nil {
+		log.ErrorResponse = err.Error()
+	}
+
+	return res, log
 }
 
 // Находим нужный элемент для замены
 func (e *ProxyEngine) getReplaceItem(r *http.Request) *ReplacedItem {
 	// обходим каждый элемн на соответсвие  ..и если что проверякм
 	for _, val := range e.replaced {
-		if(val.IsSuitable(r)){
+		if val.IsSuitable(r) {
 			fmt.Println(" this is suttable")
-			return &val;
+			return &val
 		}
 	}
 

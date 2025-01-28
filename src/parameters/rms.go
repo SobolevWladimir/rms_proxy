@@ -12,10 +12,10 @@ import (
 )
 
 type RMSConnectParameter struct {
-	url             string
-	login           string
-	password        string
-	needPassEncrupt bool
+	URL             string `json:"url"`
+	Login           string `json:"login"`
+	Password        string
+	MeedPassEncrupt bool `json:"needPassEncrupt"`
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
@@ -32,16 +32,16 @@ func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
 
 	return rm.Proxy(r, token)
 }
-func (rm *RMSConnectParameter) Logout(token string) error {
 
-	uri, err := url.Parse(rm.url)
+func (rm *RMSConnectParameter) Logout(token string) error {
+	uri, err := url.Parse(rm.URL)
 	if err != nil {
 		return nil
 	}
 
 	uri.Path = "/resto/api/logout"
 	query := uri.Query()
-	query.Set("key", rm.login)
+	query.Set("key", rm.Login)
 	query.Set("client-type", "iikoweb")
 	uri.RawQuery = query.Encode()
 	_, err = http.Get(uri.String())
@@ -49,20 +49,20 @@ func (rm *RMSConnectParameter) Logout(token string) error {
 }
 
 func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
-	uri, err := url.Parse(rm.url)
+	uri, err := url.Parse(rm.URL)
 	if err != nil {
 		return nil, err
 	}
 	uri.Path = "/resto/api/auth"
 	query := uri.Query()
-	query.Set("login", rm.login)
-	if rm.needPassEncrupt {
+	query.Set("login", rm.Login)
+	if rm.MeedPassEncrupt {
 		hasher := sha1.New()
-		hasher.Write([]byte(rm.password))
+		hasher.Write([]byte(rm.Password))
 		pass := hex.EncodeToString(hasher.Sum(nil))
 		query.Set("pass", pass)
 	} else {
-		query.Set("pass", rm.password)
+		query.Set("pass", rm.Password)
 	}
 	uri.RawQuery = query.Encode()
 	resp, err := http.Get(uri.String())
@@ -70,7 +70,7 @@ func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 }
 
 func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Response, error) {
-	uri, err := url.Parse(rm.url)
+	uri, err := url.Parse(rm.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,6 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Respo
 	resp, err := client.Do(req)
 	fmt.Println("  /end  \n")
 	return resp, err
-
 }
 
 func (rm *RMSConnectParameter) getHeaders(r *http.Request) http.Header {

@@ -1,7 +1,6 @@
 package clientserver
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -53,34 +52,7 @@ func (cs *ClientServer) StartServer() {
 	}
 
 	r := gin.Default()
-
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	r.GET("/ws", func(c *gin.Context) {
-		conn, err := cs.upgrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			fmt.Println("Ошибка сокета")
-			fmt.Println(err.Error())
-			return
-		}
-		defer conn.Close()
-		for {
-			// fmt.Println(data);
-			if len(cs.Messages) > 0 {
-				data, err := json.Marshal(cs.Messages)
-				if err != nil {
-					fmt.Println("Ошибка парсина списка")
-					fmt.Println(err.Error())
-					break
-				}
-				conn.WriteMessage(websocket.TextMessage, data)
-				cs.Messages = make([]parameters.LogItem, 0)
-			}
-		}
-	})
+	cs.route(r)
 
 	r.Run(":9090")
 }

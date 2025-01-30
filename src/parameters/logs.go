@@ -14,7 +14,7 @@ type LogItem struct {
 	ProxyTo         *ReplacedItem       `json:"proxyTo"`         // Куда проксируется
 	IsErrorResponse bool                `json:"isErrorResponse"` //  Если клиент ответил с ошибокй
 	ClientResponse  *HTTPResponse       `json:"clientResponse"`
-	ErrorResponse   string               `json:"error"`
+	ErrorResponse   string              `json:"error"`
 }
 
 type HTTPRequst struct {
@@ -52,6 +52,7 @@ type HTTPResponse struct {
 	// Data *http.Response
 	Body   string
 	Header http.Header
+	Status int
 }
 
 func CreateHTTPResponse(r *http.Response) *HTTPResponse {
@@ -63,6 +64,7 @@ func CreateHTTPResponse(r *http.Response) *HTTPResponse {
 	return &HTTPResponse{
 		Header: r.Header,
 		Body:   body,
+		Status: r.StatusCode,
 		// Body: "",
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -74,7 +73,6 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Respo
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("\n \n  --------------- \n PROXY TO: \n")
 	uri.Path = r.URL.Path
 	query := r.URL.Query()
 	query.Set("key", token)
@@ -84,17 +82,12 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Respo
 		panic(err)
 	}
 	client := &http.Client{}
-	fmt.Println("URL:", uri.String())
-	fmt.Println("METHOD:", r.Method)
-	fmt.Println("BODY:", string(requestBody))
 	req, err := http.NewRequest(r.Method, uri.String(), bytes.NewBuffer(requestBody))
 	req.Header = rm.getHeaders(r)
-	fmt.Println("Headers:", req.Header)
 	if err != nil {
 		return nil, err
 	}
 	resp, err := client.Do(req)
-	fmt.Println("  /end  \n")
 	return resp, err
 }
 

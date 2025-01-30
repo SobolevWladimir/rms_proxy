@@ -1,7 +1,6 @@
 package parameters
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -42,7 +41,6 @@ func (e *ProxyEngine) getReplaceItem(r *http.Request) *ReplacedItem {
 	// обходим каждый элемн на соответсвие  ..и если что проверякм
 	for _, val := range e.replaced {
 		if val.IsSuitable(r) {
-			fmt.Println(" this is suttable")
 			return &val
 		}
 	}

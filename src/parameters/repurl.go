@@ -1,7 +1,6 @@
 package parameters
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -14,7 +13,6 @@ type ReplacedItem struct {
 }
 
 func (rm *ReplacedItem) Handle(r *http.Request) (*http.Response, error) {
-	fmt.Println("\n Handle: ", r.URL.Path)
 	if(len(rm.PathTo)>0){
 		r.URL.Path = rm.PathTo
 	}

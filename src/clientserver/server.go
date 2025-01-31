@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"rms_proxy/v2/src/localstore"
 	"rms_proxy/v2/src/parameters"
 	"rms_proxy/v2/src/proxyserver"
 
@@ -17,6 +18,7 @@ type ClientServer struct {
 	upgrader    websocket.Upgrader
 	readChanLog chan parameters.LogItem
 	Messages    []parameters.LogItem
+	storeConfig *localstore.ConfigStore
 }
 
 func (cs *ClientServer) LisenChan() {
@@ -34,6 +36,7 @@ func (cs *ClientServer) LisenChan() {
 func (cs *ClientServer) StartServer() {
 	chanLog := make(chan parameters.LogItem)
 	cs.readChanLog = chanLog
+	cs.storeConfig = &localstore.ConfigStore{Path: "./"}
 	pServer := &proxyserver.ProxyServer{
 		Port:         ":8084",
 		ReadTimeout:  30 * time.Second,

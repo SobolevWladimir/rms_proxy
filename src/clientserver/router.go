@@ -15,11 +15,9 @@ import (
 )
 
 func (cs *ClientServer) route(r *gin.Engine) {
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	r.GET("/setting/rms", cs.GetListRms)
+	r.POST("/setting/rms", cs.SaveListRms)
+
 	r.GET("/ws", func(c *gin.Context) {
 		conn, err := cs.upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
@@ -55,7 +53,6 @@ func (cs *ClientServer) routeFrontFiles(r *gin.Engine) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 
 	for _, e := range entries {
 		if e.IsDir() {

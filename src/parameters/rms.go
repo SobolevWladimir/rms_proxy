@@ -17,7 +17,7 @@ type RMSConnectParameter struct {
 	MeedPassEncrupt bool `json:"needPassEncrupt"`
 }
 
-func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
+func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
 	respToken, err := rm.GetToken()
 	if r.URL.Path == "/resto/api/auth" {
 		return respToken, err
@@ -29,7 +29,7 @@ func (rm *RMSConnectParameter) Handle(r *http.Request) (*http.Response, error) {
 	token := string(b)
 	defer rm.Logout(token)
 
-	return rm.Proxy(r, token)
+	return rm.Proxy(r, token, log)
 }
 
 func (rm *RMSConnectParameter) Logout(token string) error {
@@ -68,7 +68,7 @@ func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	return resp, err
 }
 
-func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Response, error) {
+func (rm *RMSConnectParameter) Proxy(r *http.Request, token string, log *LogItem) (*http.Response, error) {
 	uri, err := url.Parse(rm.URL)
 	if err != nil {
 		return nil, err
@@ -84,6 +84,8 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string) (*http.Respo
 	client := &http.Client{}
 	req, err := http.NewRequest(r.Method, uri.String(), bytes.NewBuffer(requestBody))
 	req.Header = rm.getHeaders(r)
+	log.ClientProxyRequest = CreateHTTPRequest(req)
+
 	if err != nil {
 		return nil, err
 	}

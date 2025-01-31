@@ -12,11 +12,11 @@ type ReplacedItem struct {
 	PfakeContent      string             `json:"fakeContent"`  //  ответ .. если не берем из  рмс
 }
 
-func (rm *ReplacedItem) Handle(r *http.Request) (*http.Response, error) {
+func (rm *ReplacedItem) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
 	if(len(rm.PathTo)>0){
 		r.URL.Path = rm.PathTo
 	}
-	return rm.PfakeRms.Handle(r)
+	return rm.PfakeRms.Handle(r, log)
 }
 
 func (rm *ReplacedItem) IsSuitable(r *http.Request) bool {

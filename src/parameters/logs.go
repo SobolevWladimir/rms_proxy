@@ -9,6 +9,7 @@ import (
 // Сам лог для записи
 type LogItem struct {
 	ClientRequest   *HTTPRequst         `json:"clientRequest"`
+	ClientProxyRequest   *HTTPRequst         `json:"clientProxyRequest"`
 	IsProxy         bool                `json:"isProxy"` // Если проксируется
 	MainRMS         RMSConnectParameter `json:"mainRms"`
 	ProxyTo         *ReplacedItem       `json:"proxyTo"`         // Куда проксируется

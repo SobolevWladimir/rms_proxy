@@ -19,11 +19,11 @@ func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
 	var err error
 	log.MainRMS = e.mainRms
 	if rep != nil {
-		res, err = rep.Handle(r)
+		res, err = rep.Handle(r, &log)
 		log.IsProxy = true
 		log.ProxyTo = rep
 	} else {
-		res, err = e.mainRms.Handle(r)
+		res, err = e.mainRms.Handle(r, &log)
 		log.IsProxy = false
 		log.ProxyTo = nil
 	}

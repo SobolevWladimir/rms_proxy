@@ -18,11 +18,9 @@ type ProxyServer struct {
 }
 
 func (sv *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\n----------------")
 	fmt.Println(r.Method, r.URL.String())
 	repository := parameters.SettingsRepositoryMemory{}
 	engine := repository.GetActiveProxySettings()
-	fmt.Println("result:")
 	result, log := engine.Handle(r)
 	sv.ChanLog <- log
 	if log.IsErrorResponse {
@@ -39,7 +37,6 @@ func (sv *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err.Error())
 	}
 	fmt.Fprintln(w, string(body))
-	fmt.Println("---------------- end ---------------------")
 }
 
 func (sv *ProxyServer) setHeader(w http.ResponseWriter, resp *http.Response) {

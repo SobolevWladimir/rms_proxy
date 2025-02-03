@@ -14,7 +14,7 @@ type RMSConnectParameter struct {
 	URL             string `json:"url"`
 	Login           string `json:"login"`
 	Password        string
-	MeedPassEncrupt bool `json:"needPassEncrupt"`
+	NeedPassEncrupt bool `json:"needPassEncrupt"`
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
@@ -55,7 +55,7 @@ func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	uri.Path = "/resto/api/auth"
 	query := uri.Query()
 	query.Set("login", rm.Login)
-	if rm.MeedPassEncrupt {
+	if rm.NeedPassEncrupt {
 		hasher := sha1.New()
 		hasher.Write([]byte(rm.Password))
 		pass := hex.EncodeToString(hasher.Sum(nil))

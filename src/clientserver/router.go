@@ -17,6 +17,9 @@ import (
 func (cs *ClientServer) route(r *gin.Engine) {
 	r.GET("/setting/rms", cs.GetListRms)
 	r.POST("/setting/rms", cs.SaveListRms)
+	r.GET("/setting/proxy", cs.GetListProxy)
+	r.POST("/setting/proxy", cs.SaveListProxy)
+
 
 	r.GET("/ws", func(c *gin.Context) {
 		conn, err := cs.upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -46,7 +49,7 @@ func (cs *ClientServer) route(r *gin.Engine) {
 func (cs *ClientServer) routeFrontFiles(r *gin.Engine) {
 	filesFront := os.Getenv("RMS_FILE_FILES_FRONT") // Переменная для хранения файлов
 	if len(filesFront) == 0 {
-		slog.Warn("Не указана папка для хранения фронта")
+		slog.Warn("Не указана папка для хранения фронта (RMS_FILE_FILES_FRONT)")
 		return
 	}
 	entries, err := os.ReadDir(filesFront)

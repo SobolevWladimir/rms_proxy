@@ -3,6 +3,7 @@ package clientserver
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"rms_proxy/v2/src/localstore"
@@ -36,7 +37,17 @@ func (cs *ClientServer) LisenChan() {
 func (cs *ClientServer) StartServer() {
 	chanLog := make(chan parameters.LogItem)
 	cs.readChanLog = chanLog
-	cs.storeConfig = &localstore.ConfigStore{Path: "./"}
+
+	settingPath := os.Getenv("RMS_FILE_SETTING")
+	if len(settingPath) == 0 {
+		settingPath = "./"
+		fmt.Println("Сохраняем котфигурацию в ", settingPath)
+		fmt.Println("Для изменения задайте  RMS_FILE_SETTING")
+	}
+
+	// Переменная для хранения файлов
+	cs.storeConfig = &localstore.ConfigStore{Path: settingPath}
+
 	pServer := &proxyserver.ProxyServer{
 		Port:         ":8084",
 		ReadTimeout:  30 * time.Second,

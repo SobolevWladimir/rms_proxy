@@ -8,7 +8,6 @@ import (
 
 type ConfigStore struct {
 	Path string
-
 }
 type ConfigProxyEngine struct {
 	MainRms     ConfigRmsItem
@@ -27,8 +26,9 @@ func (c *ConfigStore) getFileForProxyItems() string {
 
 func (c *ConfigProxyEngine) GetActiveProxySettings() *parameters.ProxyEngine {
 	result := parameters.ProxyEngine{}
-	rmsMap  := c.getRms();
-	
+	rmsMap := c.getRms()
+	// TODO: тут остановился
+	// Надо еще перезагрузку сделать 
 
 	return &result
 }

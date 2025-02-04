@@ -16,10 +16,12 @@ import (
 
 type ClientServer struct {
 	// ReadChanLog chan parameters.LogItem
-	upgrader    websocket.Upgrader
-	readChanLog chan parameters.LogItem
-	Messages    []parameters.LogItem
-	storeConfig *localstore.ConfigStore
+	upgrader          websocket.Upgrader
+	readChanLog       chan parameters.LogItem
+	restartChanSignal chan bool
+	Messages          []parameters.LogItem
+	storeConfig       *localstore.ConfigStore
+	proxyServers      []*proxyserver.ProxyServer
 }
 
 func (cs *ClientServer) LisenChan() {
@@ -34,9 +36,40 @@ func (cs *ClientServer) LisenChan() {
 	}
 }
 
+func (cs *ClientServer) startProxyServers() {
+	cs.proxyServers = []*proxyserver.ProxyServer{}
+	engineList := cs.storeConfig.GetEngines()
+	for _, conf := range engineList {
+		engine := conf.GetActiveProxySettings()
+		pServer := &proxyserver.ProxyServer{
+			Engine:       engine,
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			ChanLog:      cs.readChanLog,
+		}
+		cs.proxyServers = append(cs.proxyServers, pServer)
+		go pServer.Start()
+	}
+}
+
+func (cs *ClientServer) stopProxyServers() {
+	for _, server := range cs.proxyServers {
+		server.Stop()
+	}
+}
+
+func (cs *ClientServer) ListenChangeConfiguration() {
+	for {
+		<-cs.restartChanSignal
+		cs.stopProxyServers()
+		cs.startProxyServers()
+	}
+}
+
 func (cs *ClientServer) StartServer() {
 	chanLog := make(chan parameters.LogItem)
 	cs.readChanLog = chanLog
+	cs.restartChanSignal = make(chan bool)
 
 	settingPath := os.Getenv("RMS_FILE_SETTING")
 	if len(settingPath) == 0 {
@@ -47,15 +80,10 @@ func (cs *ClientServer) StartServer() {
 
 	// Переменная для хранения файлов
 	cs.storeConfig = &localstore.ConfigStore{Path: settingPath}
+	cs.startProxyServers()
 
-	pServer := &proxyserver.ProxyServer{
-		Port:         ":8084",
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		ChanLog:      chanLog,
-	}
-	go pServer.Start()
 	go cs.LisenChan()
+	go cs.ListenChangeConfiguration()
 
 	cs.upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,

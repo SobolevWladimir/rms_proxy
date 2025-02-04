@@ -24,6 +24,21 @@ func (c *ConfigStore) getFileForProxyItems() string {
 	return pwd
 }
 
+func (c *ConfigStore) GetEngines() []ConfigProxyEngine {
+	rmsList := c.GetRMSList()
+	result := []ConfigProxyEngine{}
+	for _, r := range rmsList.List {
+		if r.ListenPort != nil && len(*r.ListenPort) > 0 {
+			item := ConfigProxyEngine{
+				MainRms:     r,
+				configStore: c,
+			}
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
 func (c *ConfigProxyEngine) GetActiveProxySettings() *parameters.ProxyEngine {
 	result := parameters.ProxyEngine{}
 	result.MainRms = c.MainRms.ToParameter()
@@ -33,6 +48,7 @@ func (c *ConfigProxyEngine) GetActiveProxySettings() *parameters.ProxyEngine {
 		rep := item.ToReplaceItem(rmsMap)
 		result.Replaced = append(result.Replaced, rep)
 	}
+	result.Port = ":" + *c.MainRms.ListenPort
 	return &result
 }
 

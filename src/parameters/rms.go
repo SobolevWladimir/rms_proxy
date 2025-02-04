@@ -11,6 +11,7 @@ import (
 )
 
 type RMSConnectParameter struct {
+	Name string `json:"name"`
 	URL             string `json:"url"`
 	Login           string `json:"login"`
 	Password        string

@@ -19,6 +19,7 @@ func (cs *ClientServer) SaveListRms(c *gin.Context) {
 	cs.storeConfig.SaveRmsList(list)
 
 	c.JSON(http.StatusOK, list)
+	cs.restartChanSignal <- true
 }
 
 func (cs *ClientServer) GetListProxy(c *gin.Context) {
@@ -32,4 +33,5 @@ func (cs *ClientServer) SaveListProxy(c *gin.Context) {
 	cs.storeConfig.SaveProxyItems(list)
 
 	c.JSON(http.StatusOK, list)
+	cs.restartChanSignal <- true
 }

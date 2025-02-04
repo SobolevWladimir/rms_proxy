@@ -11,17 +11,16 @@ import (
 )
 
 type ProxyServer struct {
-	Port         string
+	Engine       *parameters.ProxyEngine
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	ChanLog      chan parameters.LogItem
+	server       *http.Server
 }
 
 func (sv *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Method, r.URL.String())
-	repository := parameters.SettingsRepositoryMemory{}
-	engine := repository.GetActiveProxySettings()
-	result, log := engine.Handle(r)
+	result, log := sv.Engine.Handle(r)
 	sv.ChanLog <- log
 	if log.IsErrorResponse {
 		fmt.Println("error response", log.ErrorResponse)
@@ -46,13 +45,26 @@ func (sv *ProxyServer) setHeader(w http.ResponseWriter, resp *http.Response) {
 }
 
 func (sv *ProxyServer) Start() {
-	fmt.Println("start server")
-	s := &http.Server{
-		Addr:           sv.Port,
+	fmt.Println("----------------- --------------------------")
+	fmt.Println("Start server for: ", sv.Engine.MainRms.Name, "port: ", sv.Engine.Port )
+	fmt.Println("--------------------------------------------")
+	sv.server = &http.Server{
+		Addr:           sv.Engine.Port,
 		Handler:        sv,
 		ReadTimeout:    sv.ReadTimeout,
 		WriteTimeout:   sv.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	log.Fatal(s.ListenAndServe())
+	log.Fatal(sv.server.ListenAndServe())
+}
+
+func (sv *ProxyServer) Stop() error {
+	fmt.Println("----------------- --------------------------")
+	fmt.Println("Stop server : ", sv.Engine.MainRms.Name)
+	err := sv.server.Close()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("--------------------------------------------")
+	return err
 }

@@ -18,9 +18,10 @@ type ConfigRmsItem struct {
 
 func (c *ConfigRmsItem) ToParameter() parameters.RMSConnectParameter {
 	result := parameters.RMSConnectParameter{}
-	result.URL   = c.URL
+	result.Name = c.Name
+	result.URL = c.URL
 	result.Login = c.Login
 	result.Password = c.Password
-	result.NeedPassEncrupt  = c.NeedPassEncrupt
+	result.NeedPassEncrupt = c.NeedPassEncrupt
 	return result
 }

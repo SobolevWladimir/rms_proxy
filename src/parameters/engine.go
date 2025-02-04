@@ -5,8 +5,9 @@ import (
 )
 
 type ProxyEngine struct {
-	replaced []ReplacedItem      // список элементов на замену
-	mainRms  RMSConnectParameter //  Основоной контент от куда берем данные
+	Replaced []ReplacedItem      // список элементов на замену
+	MainRms  RMSConnectParameter //  Основоной контент от куда берем данные
+	Port string 
 }
 
 func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
@@ -17,13 +18,13 @@ func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
 	rep := e.getReplaceItem(r)
 	var res *http.Response
 	var err error
-	log.MainRMS = e.mainRms
+	log.MainRMS = e.MainRms
 	if rep != nil {
 		res, err = rep.Handle(r, &log)
 		log.IsProxy = true
 		log.ProxyTo = rep
 	} else {
-		res, err = e.mainRms.Handle(r, &log)
+		res, err = e.MainRms.Handle(r, &log)
 		log.IsProxy = false
 		log.ProxyTo = nil
 	}
@@ -39,7 +40,7 @@ func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
 // Находим нужный элемент для замены
 func (e *ProxyEngine) getReplaceItem(r *http.Request) *ReplacedItem {
 	// обходим каждый элемн на соответсвие  ..и если что проверякм
-	for _, val := range e.replaced {
+	for _, val := range e.Replaced {
 		if val.IsSuitable(r) {
 			return &val
 		}

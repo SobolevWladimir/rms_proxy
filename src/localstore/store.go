@@ -26,10 +26,13 @@ func (c *ConfigStore) getFileForProxyItems() string {
 
 func (c *ConfigProxyEngine) GetActiveProxySettings() *parameters.ProxyEngine {
 	result := parameters.ProxyEngine{}
+	result.MainRms = c.MainRms.ToParameter()
 	rmsMap := c.getRms()
-	// TODO: тут остановился
-	// Надо еще перезагрузку сделать 
-
+	items := c.configStore.GetProxyItems()
+	for _, item := range items {
+		rep := item.ToReplaceItem(rmsMap)
+		result.Replaced = append(result.Replaced, rep)
+	}
 	return &result
 }
 

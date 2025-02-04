@@ -7,7 +7,7 @@ import (
 type ProxyEngine struct {
 	Replaced []ReplacedItem      // список элементов на замену
 	MainRms  RMSConnectParameter //  Основоной контент от куда берем данные
-	Port string 
+	Port     string
 }
 
 func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {

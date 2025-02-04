@@ -11,7 +11,7 @@ import (
 )
 
 type RMSConnectParameter struct {
-	Name string `json:"name"`
+	Name            string `json:"name"`
 	URL             string `json:"url"`
 	Login           string `json:"login"`
 	Password        string
@@ -26,7 +26,7 @@ func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Resp
 	if err != nil {
 		return nil, err
 	}
-	b, err := io.ReadAll(respToken.Body)
+	b, _ := io.ReadAll(respToken.Body)
 	token := string(b)
 	defer rm.Logout(token)
 

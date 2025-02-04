@@ -1,6 +1,7 @@
 package proxyserver
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -29,7 +30,6 @@ func (sv *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sv.setHeader(w, result)
 	w.WriteHeader(result.StatusCode)
 
-	fmt.Println("status code", result.StatusCode)
 	body, err := io.ReadAll(result.Body)
 	if err != nil {
 		fmt.Println("error  read body", err.Error())
@@ -46,23 +46,31 @@ func (sv *ProxyServer) setHeader(w http.ResponseWriter, resp *http.Response) {
 
 func (sv *ProxyServer) Start() {
 	fmt.Println("----------------- --------------------------")
-	fmt.Println("Start server for: ", sv.Engine.MainRms.Name, "port: ", sv.Engine.Port )
+	fmt.Println("Start server for: ", sv.Engine.MainRms.Name)
+	fmt.Println("port", sv.Engine.Port)
 	fmt.Println("--------------------------------------------")
-	sv.server = &http.Server{
-		Addr:           sv.Engine.Port,
-		Handler:        sv,
-		ReadTimeout:    sv.ReadTimeout,
-		WriteTimeout:   sv.WriteTimeout,
-		MaxHeaderBytes: 1 << 20,
-	}
+	server := new(http.Server)
+	server.Addr = sv.Engine.Port
+	server.Handler = sv
+
+	server.ReadTimeout = sv.ReadTimeout
+	server.WriteTimeout = sv.WriteTimeout
+	server.MaxHeaderBytes = 1 << 20
+
+	sv.server = server
+
 	log.Fatal(sv.server.ListenAndServe())
 }
 
 func (sv *ProxyServer) Stop() error {
 	fmt.Println("----------------- --------------------------")
 	fmt.Println("Stop server : ", sv.Engine.MainRms.Name)
-	err := sv.server.Close()
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
+	err := sv.server.Shutdown(shutdownCtx)
+	// err := sv.server.Close()
 	if err != nil {
+		fmt.Println(" ------ server error")
 		fmt.Println(err.Error())
 	}
 	fmt.Println("--------------------------------------------")

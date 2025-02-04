@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"rms_proxy/v2/src/localstore"
@@ -20,19 +21,27 @@ type ClientServer struct {
 	readChanLog       chan parameters.LogItem
 	restartChanSignal chan bool
 	Messages          []parameters.LogItem
+	MessagesMutex     *sync.Mutex
 	storeConfig       *localstore.ConfigStore
 	proxyServers      []*proxyserver.ProxyServer
 }
 
 func (cs *ClientServer) LisenChan() {
 	cs.Messages = []parameters.LogItem{}
+	cs.MessagesMutex = new(sync.Mutex)
 	for {
 		val, ok := <-cs.readChanLog
+		cs.MessagesMutex.Lock()
 		if !ok {
+			fmt.Println("ошибка чтения с канала")
 			fmt.Println(val, ok, "<-- loop broke!")
 			break // exit break loop
 		}
+
+		fmt.Println("Запись в канал ", val.ClientRequest.URL)
+
 		cs.Messages = append(cs.Messages, val)
+		cs.MessagesMutex.Unlock()
 	}
 }
 
@@ -93,8 +102,19 @@ func (cs *ClientServer) StartServer() {
 		return true
 	}
 
+	time.Sleep(1 * time.Second)
 	r := gin.Default()
 	cs.route(r)
 
-	r.Run(":9090")
+	err := r.Run(":9090")
+	if err != nil {
+		fmt.Println("server error:")
+		fmt.Println(err.Error())
+
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
 }

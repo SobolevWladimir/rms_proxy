@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"time"
 
 	"rms_proxy/v2/src/parameters"
 
@@ -20,7 +21,6 @@ func (cs *ClientServer) route(r *gin.Engine) {
 	r.GET("/setting/proxy", cs.GetListProxy)
 	r.POST("/setting/proxy", cs.SaveListProxy)
 
-
 	r.GET("/ws", func(c *gin.Context) {
 		conn, err := cs.upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
@@ -32,7 +32,13 @@ func (cs *ClientServer) route(r *gin.Engine) {
 		for {
 			// fmt.Println(data);
 			if len(cs.Messages) > 0 {
+				time.Sleep(1 * time.Second)
+				cs.MessagesMutex.Lock()
 				data, err := json.Marshal(cs.Messages)
+
+				for _, val := range cs.Messages {
+					fmt.Println("Прочитали с канала", val.ClientRequest.URL)
+				}
 				if err != nil {
 					fmt.Println("Ошибка парсина списка")
 					fmt.Println(err.Error())
@@ -40,6 +46,7 @@ func (cs *ClientServer) route(r *gin.Engine) {
 				}
 				conn.WriteMessage(websocket.TextMessage, data)
 				cs.Messages = make([]parameters.LogItem, 0)
+				cs.MessagesMutex.Unlock()
 			}
 		}
 	})

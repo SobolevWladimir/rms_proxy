@@ -1,6 +1,7 @@
 package parameters
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -15,6 +16,8 @@ func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
 		ClientRequest: CreateHTTPRequest(r),
 	}
 	// проверяем, если тут наш api.
+	fmt.Println("host -------------------------------------")
+	fmt.Println(r.Host);
 	rep := e.getReplaceItem(r)
 	var res *http.Response
 	var err error

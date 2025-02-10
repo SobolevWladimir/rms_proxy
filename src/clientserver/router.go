@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"time"
 
 	"rms_proxy/v2/src/parameters"
 
@@ -23,6 +22,7 @@ func (cs *ClientServer) route(r *gin.Engine) {
 
 	r.GET("/ws", func(c *gin.Context) {
 		conn, err := cs.upgrader.Upgrade(c.Writer, c.Request, nil)
+		fmt.Println("----------connect")
 		if err != nil {
 			fmt.Println("Ошибка сокета")
 			fmt.Println(err.Error())
@@ -30,9 +30,7 @@ func (cs *ClientServer) route(r *gin.Engine) {
 		}
 		defer conn.Close()
 		for {
-			// fmt.Println(data);
 			if len(cs.Messages) > 0 {
-				time.Sleep(1 * time.Second)
 				cs.MessagesMutex.Lock()
 				data, err := json.Marshal(cs.Messages)
 
@@ -44,7 +42,16 @@ func (cs *ClientServer) route(r *gin.Engine) {
 					fmt.Println(err.Error())
 					break
 				}
-				conn.WriteMessage(websocket.TextMessage, data)
+				err = conn.WriteMessage(websocket.TextMessage, data)
+				if err != nil {
+					if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+						log.Printf("Error: %v", err)
+					} else {
+						log.Println("Connection closed by client")
+					}
+					cs.MessagesMutex.Unlock()
+					break
+				}
 				cs.Messages = make([]parameters.LogItem, 0)
 				cs.MessagesMutex.Unlock()
 			}

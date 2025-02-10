@@ -34,9 +34,6 @@ func (cs *ClientServer) route(r *gin.Engine) {
 				cs.MessagesMutex.Lock()
 				data, err := json.Marshal(cs.Messages)
 
-				for _, val := range cs.Messages {
-					fmt.Println("Прочитали с канала", val.ClientRequest.URL)
-				}
 				if err != nil {
 					fmt.Println("Ошибка парсина списка")
 					fmt.Println(err.Error())

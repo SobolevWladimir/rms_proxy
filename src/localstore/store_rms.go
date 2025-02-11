@@ -37,7 +37,8 @@ func (c *ConfigStore) GetRMSList() ConfigRmsList {
 }
 
 func (c *ConfigStore) getDefaultRmsList() ConfigRmsList {
-	port := "8091"
+	chain := "chain.rms_proxy.localhost"
+	rms1 := "rms1.rms_proxy.localhost"
 	rmsChain := ConfigRmsItem{
 		ID:              "rmsChain",
 		Name:            "Демо Chain",
@@ -45,7 +46,7 @@ func (c *ConfigStore) getDefaultRmsList() ConfigRmsList {
 		Login:           "adm",
 		Password:        "123",
 		NeedPassEncrupt: true,
-		ListenPort:      &port,
+		Domain:          &chain,
 	}
 
 	rmsOne := ConfigRmsItem{
@@ -55,6 +56,7 @@ func (c *ConfigStore) getDefaultRmsList() ConfigRmsList {
 		Login:           "adm",
 		Password:        "40bd001563085fc35165329ea1ff5c5ecbdbbeef",
 		NeedPassEncrupt: false,
+		Domain:          &rms1,
 	}
 
 	result := ConfigRmsList{List: []ConfigRmsItem{rmsChain, rmsOne}}

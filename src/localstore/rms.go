@@ -13,7 +13,7 @@ type ConfigRmsItem struct {
 	Login           string  `json:"login"`
 	Password        string  `json:"password"`
 	NeedPassEncrupt bool    `json:"needPassEncrupt"`
-	ListenPort      *string `json:"listenPort"`
+	Domain          *string `json:"domain"`
 }
 
 func (c *ConfigRmsItem) ToParameter() parameters.RMSConnectParameter {
@@ -23,5 +23,14 @@ func (c *ConfigRmsItem) ToParameter() parameters.RMSConnectParameter {
 	result.Login = c.Login
 	result.Password = c.Password
 	result.NeedPassEncrupt = c.NeedPassEncrupt
+	result.Domain = *c.Domain
+	return result
+}
+
+func (c *ConfigRmsList) ToParameter() []parameters.RMSConnectParameter {
+	result := []parameters.RMSConnectParameter{}
+	for _, rms := range c.List {
+		result = append(result, rms.ToParameter())
+	}
 	return result
 }

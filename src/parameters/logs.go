@@ -11,7 +11,7 @@ type LogItem struct {
 	ClientRequest      *HTTPRequst         `json:"clientRequest"`
 	ClientProxyRequest *HTTPRequst         `json:"clientProxyRequest"`
 	IsProxy            bool                `json:"isProxy"` // Если проксируется
-	MainRMS            RMSConnectParameter `json:"mainRms"`
+	MainRMS            *RMSConnectParameter `json:"mainRms"`
 	ProxyTo            *ReplacedItem       `json:"proxyTo"`         // Куда проксируется
 	IsErrorResponse    bool                `json:"isErrorResponse"` //  Если клиент ответил с ошибокй
 	ClientResponse     *HTTPResponse       `json:"clientResponse"`

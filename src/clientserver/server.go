@@ -23,7 +23,7 @@ type ClientServer struct {
 	Messages          []parameters.LogItem
 	MessagesMutex     *sync.Mutex
 	storeConfig       *localstore.ConfigStore
-	proxyServers      []*proxyserver.ProxyServer
+	server            *proxyserver.ProxyServer
 }
 
 func (cs *ClientServer) LisenChan() {
@@ -46,32 +46,22 @@ func (cs *ClientServer) LisenChan() {
 }
 
 func (cs *ClientServer) startProxyServers() {
-	cs.proxyServers = []*proxyserver.ProxyServer{}
-	engineList := cs.storeConfig.GetEngines()
-	for _, conf := range engineList {
-		engine := conf.GetActiveProxySettings()
-		pServer := &proxyserver.ProxyServer{
-			Engine:       engine,
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 30 * time.Second,
-			ChanLog:      cs.readChanLog,
-		}
-		cs.proxyServers = append(cs.proxyServers, pServer)
-		go pServer.Start()
+	engine := cs.storeConfig.GetActiveProxySettings()
+	pServer := &proxyserver.ProxyServer{
+		Engine:       engine,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		ChanLog:      cs.readChanLog,
 	}
-}
-
-func (cs *ClientServer) stopProxyServers() {
-	for _, server := range cs.proxyServers {
-		server.Stop()
-	}
+	cs.server = pServer
+	go pServer.Start()
 }
 
 func (cs *ClientServer) ListenChangeConfiguration() {
 	for {
 		<-cs.restartChanSignal
-		cs.stopProxyServers()
-		cs.startProxyServers()
+		engine := cs.storeConfig.GetActiveProxySettings()
+		cs.server.Engine = engine
 	}
 }
 

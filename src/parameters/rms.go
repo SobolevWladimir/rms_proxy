@@ -16,6 +16,7 @@ type RMSConnectParameter struct {
 	Login           string `json:"login"`
 	Password        string
 	NeedPassEncrupt bool `json:"needPassEncrupt"`
+	Domain            string `json:"domain"`
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Response, error) {

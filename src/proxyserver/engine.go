@@ -45,10 +45,6 @@ func (sv *ProxyServer) setHeader(w http.ResponseWriter, resp *http.Response) {
 }
 
 func (sv *ProxyServer) Start() {
-	fmt.Println("----------------- --------------------------")
-	fmt.Println("Start server for: ", sv.Engine.MainRms.Name)
-	fmt.Println("port", sv.Engine.Port)
-	fmt.Println("--------------------------------------------")
 	server := new(http.Server)
 	server.Addr = sv.Engine.Port
 	server.Handler = sv
@@ -63,8 +59,6 @@ func (sv *ProxyServer) Start() {
 }
 
 func (sv *ProxyServer) Stop() error {
-	fmt.Println("----------------- --------------------------")
-	fmt.Println("Stop server : ", sv.Engine.MainRms.Name)
 	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownRelease()
 	err := sv.server.Shutdown(shutdownCtx)
@@ -73,6 +67,5 @@ func (sv *ProxyServer) Stop() error {
 		fmt.Println(" ------ server error")
 		fmt.Println(err.Error())
 	}
-	fmt.Println("--------------------------------------------")
 	return err
 }

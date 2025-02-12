@@ -18,7 +18,6 @@ func (e *ProxyEngine) Handle(r *http.Request) (*http.Response, LogItem) {
 	log := LogItem{
 		ClientRequest: CreateHTTPRequest(r),
 	}
-	fmt.Println("HOST: ", r.Host)
 	// проверяем, если тут наш api.
 	fmt.Println(r.Host)
 	rep := e.getReplaceItem(r)
@@ -64,15 +63,12 @@ func (e *ProxyEngine) createResponseNonFoundRms() *http.Response {
 }
 
 func (e *ProxyEngine) getMainRms(host string) *RMSConnectParameter {
-	fmt.Println("find")
 	hostParts := strings.Split(host, ".")
 	if len(hostParts) == 0 {
 		fmt.Println("не указан host в заголовке")
 		return nil
 	}
 	for _, rms := range e.RmsList {
-		fmt.Println("+++++++++++++++++++++++++++++++")
-		fmt.Println(rms.Domain, hostParts[0])
 		if rms.Domain == hostParts[0] {
 			return &rms
 		}

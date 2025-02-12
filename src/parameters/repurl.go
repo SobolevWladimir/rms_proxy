@@ -9,6 +9,8 @@ import (
 type ReplacedItem struct {
 	Path             string               `json:"path"`             // url который подменяем
 	Content          string               `json:"content"`          // Условие для совмещения контента
+	QueryKeys         map[string]string `json:"query_keys"`          // Условия  ключи в запросе
+	IsContentContains bool              `json:"is_content_contains"` // Условия Искать часть контента
 	PathTo           string               `json:"pathTo"`           // url на который подменяем по умолчанию  path
 	ReplaceByFakeRms bool                 `json:"replaceByFakeRms"` // подменить запрос с помощью другой rms
 	PfakeRms         *RMSConnectParameter `json:"fakeRms"`          // само фейковое рмs

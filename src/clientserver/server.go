@@ -24,6 +24,7 @@ type ClientServer struct {
 	MessagesMutex     *sync.Mutex
 	storeConfig       *localstore.ConfigStore
 	server            *proxyserver.ProxyServer
+	currentConnect *websocket.Conn
 }
 
 func (cs *ClientServer) LisenChan() {

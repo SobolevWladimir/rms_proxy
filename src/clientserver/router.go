@@ -22,6 +22,11 @@ func (cs *ClientServer) route(r *gin.Engine) {
 
 	r.GET("/ws", func(c *gin.Context) {
 		conn, err := cs.upgrader.Upgrade(c.Writer, c.Request, nil)
+		if cs.currentConnect != nil {
+			cs.currentConnect.Close()
+		}
+		cs.currentConnect = conn
+
 		fmt.Println("----------connect")
 		if err != nil {
 			fmt.Println("Ошибка сокета")
@@ -33,7 +38,6 @@ func (cs *ClientServer) route(r *gin.Engine) {
 			if len(cs.Messages) > 0 {
 				cs.MessagesMutex.Lock()
 				data, err := json.Marshal(cs.Messages)
-
 				if err != nil {
 					fmt.Println("Ошибка парсина списка")
 					fmt.Println(err.Error())

@@ -35,9 +35,6 @@ func (sv *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error  read body", err.Error())
 		fmt.Fprintln(w, err.Error())
 	}
-	// fmt.Println("------------body-------------");
-	// fmt.Println("body", string(body))
-	// fmt.Println("-----------------------------");
 	fmt.Fprintln(w, string(body))
 }
 

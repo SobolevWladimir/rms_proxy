@@ -7,14 +7,14 @@ import (
 )
 
 type ReplacedItem struct {
-	Path             string               `json:"path"`             // url который подменяем
-	Content          string               `json:"content"`          // Условие для совмещения контента
-	QueryKeys         map[string]string `json:"query_keys"`          // Условия  ключи в запросе
-	IsContentContains bool              `json:"is_content_contains"` // Условия Искать часть контента
-	PathTo           string               `json:"pathTo"`           // url на который подменяем по умолчанию  path
-	ReplaceByFakeRms bool                 `json:"replaceByFakeRms"` // подменить запрос с помощью другой rms
-	PfakeRms         *RMSConnectParameter `json:"fakeRms"`          // само фейковое рмs
-	PfakeContent     string               `json:"fakeContent"`      //  ответ .. если не берем из  рмс
+	Path              string               `json:"path"`                // url который подменяем
+	Content           string               `json:"content"`             // Условие для совмещения контента
+	QueryKeys         map[string]string    `json:"query_keys"`          // Условия  ключи в запросе
+	IsContentContains bool                 `json:"is_content_contains"` // Условия Искать часть контента
+	PathTo            string               `json:"pathTo"`              // url на который подменяем по умолчанию  path
+	ReplaceByFakeRms  bool                 `json:"replaceByFakeRms"`    // подменить запрос с помощью другой rms
+	PfakeRms          *RMSConnectParameter `json:"fakeRms"`             // само фейковое рмs
+	PfakeContent      string               `json:"fakeContent"`         //  ответ .. если не берем из  рмс
 }
 
 func (rm *ReplacedItem) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
@@ -45,9 +45,26 @@ func (rm *ReplacedItem) IsSuitable(r *http.Request) bool {
 		b, _ := io.ReadAll(r.Body)
 		body := string(b)
 		r.Body = io.NopCloser(strings.NewReader(body))
-		if rm.Content != body {
-			return false
+
+		if rm.IsContentContains {
+			if !strings.Contains(body, rm.Content) {
+				return false
+			}
+		} else {
+			if rm.Content != body {
+				return false
+			}
 		}
 	}
+	query := r.URL.Query()
+	for val, k := range rm.QueryKeys {
+		if query.Has(k) {
+			qVal := query.Get(k)
+			if qVal != val {
+				return false
+			}
+		}
+	}
+
 	return true
 }

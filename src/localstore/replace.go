@@ -24,9 +24,14 @@ func (c *ConfigReplacedItem) ToReplaceItem(rmsList map[string]*parameters.RMSCon
 	}
 	var content string
 	var text string
-	json.Unmarshal([]byte(c.PfakeContent), &text)
-	json.Unmarshal([]byte(c.Content), &content)
-
+	err := json.Unmarshal([]byte(c.PfakeContent), &text)
+	if err != nil {
+		text = string(c.PfakeContent)
+	}
+	err = json.Unmarshal([]byte(c.Content), &content)
+	if err != nil {
+		content = c.Content
+	}
 	result := parameters.ReplacedItem{
 		Path:              c.Path,
 		QueryKeys:         c.QueryKeys,

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -20,18 +21,25 @@ type RMSConnectParameter struct {
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
-	respToken, err := rm.GetToken()
+	headers := rm.getHeaders(r)
 	if r.URL.Path == "/resto/api/auth" {
-		return respToken, err
+		return rm.ProxyGetToken(r, headers, log)
 	}
-	if err != nil {
-		return nil, err
+	if r.URL.Path == "/resto/api/logout" {
+		return rm.ProxyRestapi(r, headers, log)
 	}
-	b, _ := io.ReadAll(respToken.Body)
-	token := string(b)
-	defer rm.Logout(token)
-
-	return rm.Proxy(r, token, log)
+			// return rm.ProxyRestapi(r, headers, log)
+	val, ok := headers["X-Resto-Authtype"]
+	if ok {
+		if val[0] == "INTEGRATION" {
+			return rm.ProxyIntegrations(r, headers, log)
+		} else {
+			return rm.ProxyRestapi(r, headers, log)
+		}
+	}
+	fmt.Println("Не известный протокол")
+	fmt.Println(r.URL.Path)
+	return rm.ProxySimple(r, headers, log)
 }
 
 func (rm *RMSConnectParameter) Logout(token string) error {
@@ -49,6 +57,29 @@ func (rm *RMSConnectParameter) Logout(token string) error {
 	return err
 }
 
+func (rm *RMSConnectParameter) getPassword() string {
+	if rm.NeedPassEncrupt {
+		hasher := sha1.New()
+		hasher.Write([]byte(rm.Password))
+		pass := hex.EncodeToString(hasher.Sum(nil))
+		return pass
+	}
+	return rm.Password
+}
+
+func (rm *RMSConnectParameter) ProxyGetToken(r *http.Request, headers http.Header, log *LogItem) (*http.Response, error) {
+	uri, err := url.Parse(rm.URL)
+	if err != nil {
+		return nil, err
+	}
+	uri.Path = r.URL.Path
+	query := r.URL.Query()
+	query.Set("login", rm.Login)
+	query.Set("pass", rm.getPassword())
+	uri.RawQuery = query.Encode()
+	return rm.Proxy(r, uri, headers, log)
+}
+
 func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	uri, err := url.Parse(rm.URL)
 	if err != nil {
@@ -57,20 +88,23 @@ func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	uri.Path = "/resto/api/auth"
 	query := uri.Query()
 	query.Set("login", rm.Login)
-	if rm.NeedPassEncrupt {
-		hasher := sha1.New()
-		hasher.Write([]byte(rm.Password))
-		pass := hex.EncodeToString(hasher.Sum(nil))
-		query.Set("pass", pass)
-	} else {
-		query.Set("pass", rm.Password)
-	}
+	query.Set("pass", rm.getPassword())
 	uri.RawQuery = query.Encode()
 	resp, err := http.Get(uri.String())
 	return resp, err
 }
 
-func (rm *RMSConnectParameter) Proxy(r *http.Request, token string, log *LogItem) (*http.Response, error) {
+func (rm *RMSConnectParameter) ProxyRestapi(r *http.Request, headers http.Header, log *LogItem) (*http.Response, error) {
+	respToken, err := rm.GetToken()
+	if r.URL.Path == "/resto/api/auth" {
+		return respToken, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	b, _ := io.ReadAll(respToken.Body)
+	token := string(b)
+	defer rm.Logout(token)
 	uri, err := url.Parse(rm.URL)
 	if err != nil {
 		return nil, err
@@ -79,13 +113,41 @@ func (rm *RMSConnectParameter) Proxy(r *http.Request, token string, log *LogItem
 	query := r.URL.Query()
 	query.Set("key", token)
 	uri.RawQuery = query.Encode()
+	return rm.Proxy(r, uri, headers, log)
+}
+
+func (rm *RMSConnectParameter) ProxyIntegrations(r *http.Request, headers http.Header, log *LogItem) (*http.Response, error) {
+	uri, err := url.Parse(rm.URL)
+	if err != nil {
+		return nil, err
+	}
+	uri.Path = r.URL.Path
+	query := r.URL.Query()
+	uri.RawQuery = query.Encode()
+	headers["X-Resto-Loginname"] = []string{rm.Login}
+	headers["X-Resto-Passwordhash"] = []string{rm.getPassword()}
+	return rm.Proxy(r, uri, headers, log)
+}
+
+func (rm *RMSConnectParameter) ProxySimple(r *http.Request, headers http.Header, log *LogItem) (*http.Response, error) {
+	uri, err := url.Parse(rm.URL)
+	if err != nil {
+		return nil, err
+	}
+	uri.Path = r.URL.Path
+	query := r.URL.Query()
+	uri.RawQuery = query.Encode()
+	return rm.Proxy(r, uri, headers, log)
+}
+
+func (rm *RMSConnectParameter) Proxy(r *http.Request, uri *url.URL, headers http.Header, log *LogItem) (*http.Response, error) {
 	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest(r.Method, uri.String(), bytes.NewBuffer(requestBody))
-	req.Header = rm.getHeaders(r)
+	req.Header = headers
 	log.ClientProxyRequest = CreateHTTPRequest(req)
 
 	if err != nil {

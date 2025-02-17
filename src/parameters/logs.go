@@ -8,14 +8,14 @@ import (
 
 // Сам лог для записи
 type LogItem struct {
-	ClientRequest      *HTTPRequst         `json:"clientRequest"`
-	ClientProxyRequest *HTTPRequst         `json:"clientProxyRequest"`
-	IsProxy            bool                `json:"isProxy"` // Если проксируется
+	ClientRequest      *HTTPRequst          `json:"clientRequest"`
+	ClientProxyRequest *HTTPRequst          `json:"clientProxyRequest"`
+	IsProxy            bool                 `json:"isProxy"` // Если проксируется
 	MainRMS            *RMSConnectParameter `json:"mainRms"`
-	ProxyTo            *ReplacedItem       `json:"proxyTo"`         // Куда проксируется
-	IsErrorResponse    bool                `json:"isErrorResponse"` //  Если клиент ответил с ошибокй
-	ClientResponse     *HTTPResponse       `json:"clientResponse"`
-	ErrorResponse      string              `json:"error"`
+	ProxyTo            *ReplacedItem        `json:"proxyTo"`         // Куда проксируется
+	IsErrorResponse    bool                 `json:"isErrorResponse"` //  Если клиент ответил с ошибокй
+	ClientResponse     *HTTPResponse        `json:"clientResponse"`
+	ErrorResponse      string               `json:"error"`
 }
 
 type HTTPRequst struct {
@@ -39,15 +39,6 @@ func CreateHTTPRequest(r *http.Request) *HTTPRequst {
 	}
 }
 
-// func (h *HTTPRequst) MarshalJSON() ([]byte, error) {
-// 	ss := make(map[string]interface{})
-// 	ss["method"] = h.Data.Method
-// 	ss["url"] = h.Data.URL.String()
-// 	ss["header"] = h.Data.Header
-// 	b, _ := io.ReadAll(h.Data.Body)
-// 	ss["body"] = b
-// 	return json.Marshal(ss)
-// }
 
 type HTTPResponse struct {
 	// Data *http.Response
@@ -58,7 +49,6 @@ type HTTPResponse struct {
 
 func CreateHTTPResponse(r *http.Response) *HTTPResponse {
 	b, _ := io.ReadAll(r.Body)
-	// io.ReadAll(r io.Reader)
 	body := string(b)
 	r.Body = io.NopCloser(strings.NewReader(body))
 
@@ -69,26 +59,3 @@ func CreateHTTPResponse(r *http.Response) *HTTPResponse {
 		// Body: "",
 	}
 }
-
-// func (h *HTTPResponse) MarshalJSON() ([]byte, error) {
-// 	ss := make(map[string]interface{})
-// 	ss["header"] = h.Data.Header
-// 	b, _ := io.ReadAll(h.Data.Body)
-// 	ss["body"] = b
-// 	return json.Marshal(ss)
-// }
-
-//
-// func (l *LogItem) MarshalJSON() ([]byte, error) {
-// 	// ss := map[string]string{}
-//  //   mainRms, _ := json.Marshal(l.MainRMS);
-//  //  if(l.IsProxy){
-// 	//
-// 	// ss["is_proxy"] = "false";
-// 	//
-//  //  }
-// 	// ss["mainRms"] = string(mainRms);
-//
-//
-// 	return json.Marshal(l)
-// }

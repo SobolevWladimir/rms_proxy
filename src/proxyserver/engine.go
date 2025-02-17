@@ -35,7 +35,7 @@ func (sv *ProxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error  read body", err.Error())
 		fmt.Fprintln(w, err.Error())
 	}
-	fmt.Fprintln(w, string(body))
+	w.Write(body)
 }
 
 func (sv *ProxyServer) setHeader(w http.ResponseWriter, resp *http.Response) {

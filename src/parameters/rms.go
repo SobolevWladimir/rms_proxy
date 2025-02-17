@@ -28,7 +28,7 @@ func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Resp
 	if r.URL.Path == "/resto/api/logout" {
 		return rm.ProxyRestapi(r, headers, log)
 	}
-			// return rm.ProxyRestapi(r, headers, log)
+	// return rm.ProxyRestapi(r, headers, log)
 	val, ok := headers["X-Resto-Authtype"]
 	if ok {
 		if val[0] == "INTEGRATION" {
@@ -36,6 +36,10 @@ func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Resp
 		} else {
 			return rm.ProxyRestapi(r, headers, log)
 		}
+	}
+	if r.URL.Query().Has("key") {
+			return rm.ProxyRestapi(r, headers, log)
+
 	}
 	fmt.Println("Не известный протокол")
 	fmt.Println(r.URL.Path)

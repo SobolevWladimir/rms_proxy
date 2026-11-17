@@ -1,9 +1,9 @@
 package localstore
 
 import (
-	"rms_proxy/v2/src/parameters"
+	"encoding/json"
 
-	"github.com/goccy/go-json"
+	"rms_proxy/v2/src/parameters"
 )
 
 type ConfigReplacedItem struct {
@@ -14,33 +14,36 @@ type ConfigReplacedItem struct {
 	PathTo            string            `json:"pathTo"`              // url на который подменяем по умолчанию  path
 	ReplaceByFakeRms  bool              `json:"replaceByFakeRms"`    // подменить запрос с помощью другой rms
 	PfakeRmsID        json.RawMessage   `json:"fakeRmsId"`           // само фейковое рмs
-	PfakeContent      json.RawMessage   `json:"fakeContent"`         //  ответ .. если не берем из  рмс
+	HasContent        bool              `json:"hasContent"`          // есть ли файл с подменным контентом
 }
 
-func (c *ConfigReplacedItem) ToReplaceItem(rmsList map[string]*parameters.RMSConnectParameter) parameters.ReplacedItem {
-	rms, ok := rmsList[string(c.PfakeRmsID)]
+type ConfigReplacedItemInput struct {
+	ConfigReplacedItem
+	FakeContent string `json:"fakeContent"`
+}
+
+func rawJSONString(raw json.RawMessage) string {
+	var s string
+	if err := json.Unmarshal(raw, &s); err != nil {
+		return string(raw)
+	}
+	return s
+}
+
+func (c *ConfigReplacedItem) ToReplaceItem(rmsList map[string]*parameters.RMSConnectParameter, contentFile string) parameters.ReplacedItem {
+	rms, ok := rmsList[rawJSONString(c.PfakeRmsID)]
 	if !ok {
 		rms = nil
-	}
-	var content string
-	var text string
-	err := json.Unmarshal([]byte(c.PfakeContent), &text)
-	if err != nil {
-		text = string(c.PfakeContent)
-	}
-	err = json.Unmarshal([]byte(c.Content), &content)
-	if err != nil {
-		content = c.Content
 	}
 	result := parameters.ReplacedItem{
 		Path:              c.Path,
 		QueryKeys:         c.QueryKeys,
 		IsContentContains: c.IsContentContains,
-		Content:           content,
+		Content:           rawJSONString(json.RawMessage(c.Content)),
 		PathTo:            c.PathTo,
 		ReplaceByFakeRms:  c.ReplaceByFakeRms,
 		PfakeRms:          rms,
-		PfakeContent:      text,
+		ContentFile:       contentFile,
 	}
 	return result
 }

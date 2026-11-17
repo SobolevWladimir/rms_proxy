@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const maxLogMessages = 100
+
 type ClientServer struct {
 	// ReadChanLog chan parameters.LogItem
 	upgrader          websocket.Upgrader
@@ -32,16 +34,17 @@ func (cs *ClientServer) LisenChan() {
 	cs.MessagesMutex = new(sync.Mutex)
 	for {
 		val, ok := <-cs.readChanLog
-		cs.MessagesMutex.Lock()
 		if !ok {
 			fmt.Println("ошибка чтения с канала")
 			fmt.Println(val, ok, "<-- loop broke!")
 			break // exit break loop
 		}
 
-		fmt.Println("Запись в канал ", val.ClientRequest.URL)
-
+		cs.MessagesMutex.Lock()
 		cs.Messages = append(cs.Messages, val)
+		if len(cs.Messages) > maxLogMessages {
+			cs.Messages = cs.Messages[len(cs.Messages)-maxLogMessages:]
+		}
 		cs.MessagesMutex.Unlock()
 	}
 }

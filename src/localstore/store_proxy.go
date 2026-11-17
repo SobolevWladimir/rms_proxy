@@ -25,13 +25,50 @@ func (c *ConfigStore) GetProxyItems() []ConfigReplacedItem {
 	return result
 }
 
-func (c *ConfigStore) SaveProxyItems(items []ConfigReplacedItem) error {
-	f, _ := os.Create(c.getFileForProxyItems())
-	defer f.Close()
-	json, err := json.Marshal(items)
+func (c *ConfigStore) SaveProxyItems(items []ConfigReplacedItemInput) error {
+	meta := make([]ConfigReplacedItem, 0, len(items))
+	for _, item := range items {
+		it := item.ConfigReplacedItem
+		if len(item.FakeContent) > 0 {
+			it.HasContent = true
+			if err := c.saveProxyContent(it.Path, item.FakeContent); err != nil {
+				return err
+			}
+		} else {
+			it.HasContent = false
+			_ = c.deleteProxyContent(it.Path)
+		}
+		meta = append(meta, it)
+	}
+
+	f, err := os.Create(c.getFileForProxyItems())
 	if err != nil {
 		return err
 	}
-	_, err = f.Write(json)
+	defer f.Close()
+	data, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(data)
 	return err
+}
+
+func (c *ConfigStore) GetProxyContent(urlPath string) (string, error) {
+	content, err := os.ReadFile(c.getContentFilePath(urlPath))
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
+func (c *ConfigStore) saveProxyContent(urlPath, content string) error {
+	if err := os.MkdirAll(c.getContentDir(), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(c.getContentFilePath(urlPath), []byte(content), 0o644)
+}
+
+func (c *ConfigStore) deleteProxyContent(urlPath string) error {
+	return os.Remove(c.getContentFilePath(urlPath))
 }

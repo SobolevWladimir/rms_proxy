@@ -6,6 +6,15 @@ import (
 	"strings"
 )
 
+const maxLogBody = 64 * 1024
+
+func truncateBody(s string) string {
+	if len(s) > maxLogBody {
+		return s[:maxLogBody]
+	}
+	return s
+}
+
 // Сам лог для записи
 type LogItem struct {
 	ClientRequest      *HTTPRequst          `json:"clientRequest"`
@@ -33,7 +42,7 @@ func CreateHTTPRequest(r *http.Request) *HTTPRequst {
 
 	return &HTTPRequst{
 		Header: r.Header,
-		Body:   body,
+		Body:   truncateBody(body),
 		URL:    r.URL.String(),
 		Method: r.Method,
 	}
@@ -54,7 +63,7 @@ func CreateHTTPResponse(r *http.Response) *HTTPResponse {
 
 	return &HTTPResponse{
 		Header: r.Header,
-		Body:   body,
+		Body:   truncateBody(body),
 		Status: r.StatusCode,
 		// Body: "",
 	}

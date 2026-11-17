@@ -1,6 +1,8 @@
 package localstore
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"path"
 
 	"rms_proxy/v2/src/parameters"
@@ -20,6 +22,15 @@ func (c *ConfigStore) getFileForProxyItems() string {
 	return pwd
 }
 
+func (c *ConfigStore) getContentDir() string {
+	return path.Join(c.Path, "content")
+}
+
+func (c *ConfigStore) getContentFilePath(urlPath string) string {
+	sum := sha1.Sum([]byte(urlPath))
+	return path.Join(c.getContentDir(), hex.EncodeToString(sum[:])+".txt")
+}
+
 func (c *ConfigStore) GetActiveProxySettings() *parameters.ProxyEngine {
 	result := parameters.ProxyEngine{}
 	rmsList := c.GetRMSList()
@@ -29,7 +40,11 @@ func (c *ConfigStore) GetActiveProxySettings() *parameters.ProxyEngine {
 
 	items := c.GetProxyItems()
 	for _, item := range items {
-		rep := item.ToReplaceItem(rmsMap)
+		var contentFile string
+		if item.HasContent {
+			contentFile = c.getContentFilePath(item.Path)
+		}
+		rep := item.ToReplaceItem(rmsMap, contentFile)
 		result.Replaced = append(result.Replaced, rep)
 	}
 	return &result

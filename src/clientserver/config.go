@@ -28,10 +28,26 @@ func (cs *ClientServer) GetListProxy(c *gin.Context) {
 }
 
 func (cs *ClientServer) SaveListProxy(c *gin.Context) {
-	list := []localstore.ConfigReplacedItem{}
-	c.ShouldBindJSON(&list)
-	cs.storeConfig.SaveProxyItems(list)
+	list := []localstore.ConfigReplacedItemInput{}
+	if err := c.ShouldBindJSON(&list); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := cs.storeConfig.SaveProxyItems(list); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, list)
 	cs.restartChanSignal <- true
+}
+
+func (cs *ClientServer) GetProxyContent(c *gin.Context) {
+	urlPath := c.Query("path")
+	content, err := cs.storeConfig.GetProxyContent(urlPath)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.String(http.StatusOK, content)
 }

@@ -3,6 +3,7 @@ package parameters
 import (
 	"io"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -14,7 +15,7 @@ type ReplacedItem struct {
 	PathTo            string               `json:"pathTo"`              // url на который подменяем по умолчанию  path
 	ReplaceByFakeRms  bool                 `json:"replaceByFakeRms"`    // подменить запрос с помощью другой rms
 	PfakeRms          *RMSConnectParameter `json:"fakeRms"`             // само фейковое рмs
-	PfakeContent      string               `json:"fakeContent"`         //  ответ .. если не берем из  рмс
+	ContentFile       string               `json:"-"`                   // файл с подменным контентом
 }
 
 func (rm *ReplacedItem) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
@@ -24,13 +25,21 @@ func (rm *ReplacedItem) Handle(r *http.Request, log *LogItem) (*http.Response, e
 	if rm.ReplaceByFakeRms {
 		return rm.PfakeRms.Handle(r, log)
 	}
+	content := []byte{}
+	if len(rm.ContentFile) > 0 {
+		b, err := os.ReadFile(rm.ContentFile)
+		if err != nil {
+			return nil, err
+		}
+		content = b
+	}
 	header := make(http.Header)
 
 	header["test"] = []string{"rms_proxy"}
 
 	result := http.Response{
 		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(strings.NewReader(rm.PfakeContent)),
+		Body:       io.NopCloser(strings.NewReader(string(content))),
 		Header:     header,
 	}
 

@@ -9,15 +9,55 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
+)
+
+const tokenTTL = 14 * time.Minute
+
+type cachedToken struct {
+	token     string
+	expiresAt time.Time
+}
+
+var (
+	tokenCacheMu sync.Mutex
+	tokenCache   = map[string]cachedToken{}
 )
 
 type RMSConnectParameter struct {
 	Name            string `json:"name"`
 	URL             string `json:"url"`
 	Login           string `json:"login"`
-	Password        string
+	Password        string `json:"-"`
 	NeedPassEncrupt bool   `json:"needPassEncrupt"`
 	Domain          string `json:"domain"`
+}
+
+func (rm *RMSConnectParameter) tokenCacheKey() string {
+	return rm.URL + "|" + rm.Login
+}
+
+func (rm *RMSConnectParameter) getCachedToken() (string, bool) {
+	tokenCacheMu.Lock()
+	defer tokenCacheMu.Unlock()
+	c, ok := tokenCache[rm.tokenCacheKey()]
+	if !ok || time.Now().After(c.expiresAt) {
+		return "", false
+	}
+	return c.token, true
+}
+
+func (rm *RMSConnectParameter) setCachedToken(token string) {
+	tokenCacheMu.Lock()
+	defer tokenCacheMu.Unlock()
+	tokenCache[rm.tokenCacheKey()] = cachedToken{token: token, expiresAt: time.Now().Add(tokenTTL)}
+}
+
+func (rm *RMSConnectParameter) clearCachedToken() {
+	tokenCacheMu.Lock()
+	defer tokenCacheMu.Unlock()
+	delete(tokenCache, rm.tokenCacheKey())
 }
 
 func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Response, error) {
@@ -26,7 +66,8 @@ func (rm *RMSConnectParameter) Handle(r *http.Request, log *LogItem) (*http.Resp
 		return rm.ProxyGetToken(r, headers, log)
 	}
 	if r.URL.Path == "/resto/api/logout" {
-		return rm.ProxyRestapi(r, headers, log)
+		rm.clearCachedToken()
+		return rm.ProxySimple(r, headers, log)
 	}
 	// return rm.ProxyRestapi(r, headers, log)
 	val, ok := headers["X-Resto-Authtype"]
@@ -54,7 +95,7 @@ func (rm *RMSConnectParameter) Logout(token string) error {
 
 	uri.Path = "/resto/api/logout"
 	query := uri.Query()
-	query.Set("key", rm.Login)
+	query.Set("key", token)
 	query.Set("client-type", "iikoweb")
 	uri.RawQuery = query.Encode()
 	_, err = http.Get(uri.String())
@@ -98,17 +139,29 @@ func (rm *RMSConnectParameter) GetToken() (*http.Response, error) {
 	return resp, err
 }
 
-func (rm *RMSConnectParameter) ProxyRestapi(r *http.Request, headers http.Header, log *LogItem) (*http.Response, error) {
-	respToken, err := rm.GetToken()
-	if r.URL.Path == "/resto/api/auth" {
-		return respToken, err
+func (rm *RMSConnectParameter) getToken() (string, error) {
+	if token, ok := rm.getCachedToken(); ok {
+		return token, nil
 	}
+	resp, err := rm.GetToken()
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	token := string(b)
+	rm.setCachedToken(token)
+	return token, nil
+}
+
+func (rm *RMSConnectParameter) ProxyRestapi(r *http.Request, headers http.Header, log *LogItem) (*http.Response, error) {
+	token, err := rm.getToken()
 	if err != nil {
 		return nil, err
 	}
-	b, _ := io.ReadAll(respToken.Body)
-	token := string(b)
-	defer rm.Logout(token)
 	uri, err := url.Parse(rm.URL)
 	if err != nil {
 		return nil, err

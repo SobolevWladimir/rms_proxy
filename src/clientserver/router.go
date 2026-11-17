@@ -18,6 +18,7 @@ func (cs *ClientServer) route(r *gin.Engine) {
 	r.GET("/setting/rms", cs.GetListRms)
 	r.POST("/setting/rms", cs.SaveListRms)
 	r.GET("/setting/proxy", cs.GetListProxy)
+	r.GET("/setting/proxy/content", cs.GetProxyContent)
 	r.POST("/setting/proxy", cs.SaveListProxy)
 
 	r.GET("/ws", func(c *gin.Context) {

@@ -22,6 +22,7 @@ type ClientServer struct {
 	upgrader          websocket.Upgrader
 	readChanLog       chan parameters.LogItem
 	restartChanSignal chan bool
+	notifyChan        chan struct{}
 	Messages          []parameters.LogItem
 	MessagesMutex     *sync.Mutex
 	storeConfig       *localstore.ConfigStore
@@ -46,6 +47,11 @@ func (cs *ClientServer) LisenChan() {
 			cs.Messages = cs.Messages[len(cs.Messages)-maxLogMessages:]
 		}
 		cs.MessagesMutex.Unlock()
+
+		select {
+		case cs.notifyChan <- struct{}{}:
+		default:
+		}
 	}
 }
 
@@ -73,6 +79,7 @@ func (cs *ClientServer) StartServer() {
 	chanLog := make(chan parameters.LogItem)
 	cs.readChanLog = chanLog
 	cs.restartChanSignal = make(chan bool)
+	cs.notifyChan = make(chan struct{}, 1)
 
 	settingPath := os.Getenv("RMS_FILE_SETTING")
 	if len(settingPath) == 0 {

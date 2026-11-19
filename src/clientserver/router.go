@@ -36,27 +36,32 @@ func (cs *ClientServer) route(r *gin.Engine) {
 		}
 		defer conn.Close()
 		for {
-			if len(cs.Messages) > 0 {
-				cs.MessagesMutex.Lock()
-				data, err := json.Marshal(cs.Messages)
-				if err != nil {
-					fmt.Println("Ошибка парсина списка")
-					fmt.Println(err.Error())
-					break
-				}
-				err = conn.WriteMessage(websocket.TextMessage, data)
-				if err != nil {
-					if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-						log.Printf("Error: %v", err)
-					} else {
-						log.Println("Connection closed by client")
-					}
-					cs.MessagesMutex.Unlock()
-					break
-				}
-				cs.Messages = make([]parameters.LogItem, 0)
+			<-cs.notifyChan
+
+			cs.MessagesMutex.Lock()
+			if len(cs.Messages) == 0 {
 				cs.MessagesMutex.Unlock()
+				continue
 			}
+			data, err := json.Marshal(cs.Messages)
+			if err != nil {
+				fmt.Println("Ошибка парсина списка")
+				fmt.Println(err.Error())
+				cs.MessagesMutex.Unlock()
+				break
+			}
+			err = conn.WriteMessage(websocket.TextMessage, data)
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("Error: %v", err)
+				} else {
+					log.Println("Connection closed by client")
+				}
+				cs.MessagesMutex.Unlock()
+				break
+			}
+			cs.Messages = make([]parameters.LogItem, 0)
+			cs.MessagesMutex.Unlock()
 		}
 	})
 	cs.routeFrontFiles(r)

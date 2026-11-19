@@ -75,7 +75,8 @@ func (cs *ClientServer) routeFrontFiles(r *gin.Engine) {
 	}
 	entries, err := os.ReadDir(filesFront)
 	if err != nil {
-		log.Fatal(err)
+		slog.Warn("Не удалось прочитать папку фронта", "path", filesFront, "error", err)
+		return
 	}
 
 	for _, e := range entries {
